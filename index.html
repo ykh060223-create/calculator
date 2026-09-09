@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Position Sizing Calculator - 포지션 사이징 계산기</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel CDN for JSX Parsing -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    }
+    
+    /* Remove input spinner buttons */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const MoonIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    );
+
+    const SunIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    );
+
+    const SaveIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 18v-4h4v4"/></svg>
+    );
+
+    const RefreshCwIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 21H3v-5"/></svg>
+    );
+
+    const AlertCircleIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    );
+
+    const InfoIcon = ({ className = "w-5 h-5" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    );
+
+    const CalculatorIcon = ({ className = "w-6 h-6" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+    );
+
+    const Trash2Icon = ({ className = "w-4 h-4" }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+    );
+
+    const addCommas = (str) => {
+      if (str === null || str === undefined) return '';
+      const parts = str.toString().split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return parts.join('.');
+    };
+
+    const removeCommas = (str) => {
+      if (!str) return '';
+      return str.toString().replace(/,/g, '');
+    };
+
+    const App = () => {
+      const [theme, setTheme] = useState('dark');
+      
+      // Step 1: Input States
+      const [market, setMarket] = useState('US'); // KR, US, CRYPTO
+      
+      // Separate balance state for each market type
+      const [balances, setBalances] = useState({
+        KR: '10,000,000',
+        US: '10,000',
+        CRYPTO: '10,000',
+      });
+
+      const [position, setPosition] = useState('LONG'); // LONG, SHORT
+      const [leverage, setLeverage] = useState('1');
+      const [entry, setEntry] = useState('100');
+      const [stopLoss, setStopLoss] = useState('96.50');
+      const [risk, setRisk] = useState('1');
+      const [symbol, setSymbol] = useState('');
+      const [memo, setMemo] = useState('');
+
+      // Calculation Result States
+      const [size, setSize] = useState(null);
+      const [riskPerShare, setRiskPerShare] = useState(null);
+      const [totalEntryAmount, setTotalEntryAmount] = useState(null);
+      const [error, setError] = useState('');
+
+      // Trade Log State
+      const [tradeLog, setTradeLog] = useState([]);
+
+      useEffect(() => {
+        // Enforce Leverage = 1 for Stocks (KR & US)
+        if (market !== 'CRYPTO') {
+          setLeverage('1');
+        }
+      }, [market]);
+
+      useEffect(() => {
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [theme]);
+
+      const formatNumber = (num, decimals = 2) => {
+        if (num === null || num === undefined || isNaN(num)) return '-';
+        return Number(num).toLocaleString('en-US', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: decimals,
+        });
+      };
+
+      const getCurrencySymbol = () => {
+        if (market === 'KR') return '₩';
+        if (market === 'US') return '$';
+        return 'USDT ';
+      };
+
+      const calculate = useCallback(() => {
+        setError('');
+        setSize(null);
+        setRiskPerShare(null);
+        setTotalEntryAmount(null);
+
+        const currentMarketBalance = balances[market] || '0';
+        const b = parseFloat(removeCommas(currentMarketBalance));
+        const l = parseFloat(removeCommas(leverage));
+        const e = parseFloat(removeCommas(entry));
+        const sl = parseFloat(removeCommas(stopLoss));
+        const r = parseFloat(removeCommas(risk));
+
+        // Validation Checks
+        if (!b || !e || !sl || !r) return;
+
+        if (e <= 0) {
+          setError('올바른 진입가격을 입력해주세요.');
+          return;
+        }
+        if (sl <= 0) {
+          setError('올바른 손절가격을 입력해주세요.');
+          return;
+        }
+        if (r <= 0) {
+          setError('리스크는 0보다 큰 금액을 입력해주세요.');
+          return;
+        }
+        if (r >= 100) {
+          setError('리스크는 100보다 작은 값을 입력해주세요.');
+          return;
+        }
+
+        let rps = 0;
+        if (position === 'LONG') {
+          if (sl >= e) {
+            setError('롱 포지션 기준 손절가는 진입가보다 낮아야 합니다.');
+            return;
+          }
+          rps = e - sl;
+        } else {
+          if (e >= sl) {
+            setError('숏 포지션 기준 진입가는 손절가보다 낮아야 합니다.');
+            return;
+          }
+          rps = sl - e;
+        }
+
+        if (rps <= 0) return;
+
+        // Core Calculation Formula (Floor rounding for executable position size)
+        const calculatedSize = Math.floor((b * l * (r / 100)) / rps);
+        const totalAmount = calculatedSize * e;
+
+        setRiskPerShare(rps);
+        setSize(calculatedSize);
+        setTotalEntryAmount(totalAmount);
+      }, [balances, market, leverage, entry, stopLoss, risk, position]);
+
+      useEffect(() => {
+        calculate();
+      }, [calculate]);
+
+      const handleBalanceChange = (e) => {
+        const raw = e.target.value.replace(/[^0-9.]/g, '');
+        if ((raw.match(/\./g) || []).length > 1) return;
+        const formatted = addCommas(raw);
+        setBalances(prev => ({ ...prev, [market]: formatted }));
+      };
+
+      const handleFormattedInput = (setter) => (e) => {
+        const raw = e.target.value.replace(/[^0-9.]/g, '');
+        if ((raw.match(/\./g) || []).length > 1) return;
+        setter(addCommas(raw));
+      };
+
+      const handleReset = () => {
+        setBalances({
+          KR: '10,000,000',
+          US: '10,000',
+          CRYPTO: '10,000',
+        });
+        setLeverage('1');
+        setEntry('100');
+        setStopLoss('96.50');
+        setRisk('1');
+        setSymbol('');
+        setMemo('');
+      };
+
+      const handleSaveTrade = () => {
+        if (size === null || error) return;
+        
+        const newTrade = {
+          id: Date.now(),
+          date: new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit' }),
+          symbol: symbol || '미지정',
+          market,
+          position,
+          entry: parseFloat(removeCommas(entry)),
+          stopLoss: parseFloat(removeCommas(stopLoss)),
+          risk: parseFloat(removeCommas(risk)),
+          size,
+          memo,
+        };
+
+        setTradeLog([newTrade, ...tradeLog]);
+        setMemo('');
+        setSymbol('');
+      };
+
+      const deleteTrade = (id) => {
+        setTradeLog(tradeLog.filter(t => t.id !== id));
+      };
+
+      const toggleTheme = () => {
+        setTheme(theme === 'dark' ? 'light' : 'dark');
+      };
+
+      return (
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 transition-colors duration-200">
+          
+          {/* Header Navigation */}
+          <nav className="border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md sticky top-0 z-10">
+            <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CalculatorIcon className="w-6 h-6 text-blue-600 dark:text-blue-500" />
+                <span className="font-bold text-lg tracking-tight">Position Sizing Calculator</span>
+              </div>
+              <button 
+                onClick={toggleTheme}
+                className="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                title="테마 전환"
+              >
+                {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
+              </button>
+            </div>
+          </nav>
+
+          <main className="max-w-6xl mx-auto px-4 py-10">
+            
+            {}
+            <div className="mb-10 text-left">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-neutral-900 dark:text-white leading-none drop-shadow-sm">
+                몇 주를 사야할까?
+              </h1>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              
+              {}
+              {/* LEFT COLUMN: Inputs */}
+              <div className="lg:col-span-5 space-y-6">
+                
+                {/* STEP 1: Market & Direction Selection */}
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800">
+                  <div className="flex space-x-2 mb-4">
+                    {['KR', 'US', 'CRYPTO'].map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => setMarket(m)}
+                        className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+                          market === m 
+                            ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-md' 
+                            : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700'
+                        }`}
+                      >
+                        {m === 'KR' ? '국내주식(₩)' : m === 'US' ? '미국주식($)' : '암호화폐'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setPosition('LONG')}
+                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all border-2 ${
+                        position === 'LONG'
+                          ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
+                          : 'border-transparent text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                      }`}
+                    >
+                      LONG (매수)
+                    </button>
+                    <button
+                      onClick={() => setPosition('SHORT')}
+                      className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all border-2 ${
+                        position === 'SHORT'
+                          ? 'border-rose-500 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30'
+                          : 'border-transparent text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                      }`}
+                    >
+                      SHORT (공매도)
+                    </button>
+                  </div>
+                </div>
+
+                {}
+                {/* STEP 2: Input Parameters */}
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800 space-y-5">
+                  
+                  {/* Balance & Leverage */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5">현재 잔고</label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 text-sm font-semibold">{getCurrencySymbol()}</span>
+                        <input
+                          type="text"
+                          value={balances[market] || ''}
+                          onChange={handleBalanceChange}
+                          className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5">레버리지</label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={leverage}
+                          onChange={handleFormattedInput(setLeverage)}
+                          disabled={market !== 'CRYPTO'}
+                          className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 pl-4 pr-8 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">X</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {}
+                  {/* Entry & Stop Loss (Dynamic colors according to Long / Short) */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={`block text-sm font-semibold mb-1.5 ${
+                        position === 'LONG' 
+                          ? 'text-emerald-600 dark:text-emerald-400' 
+                          : 'text-rose-600 dark:text-rose-400'
+                      }`}>
+                        진입가
+                      </label>
+                      <input
+                        type="text"
+                        value={entry}
+                        onChange={handleFormattedInput(setEntry)}
+                        className={`w-full border rounded-xl py-3 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all ${
+                          position === 'LONG'
+                            ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 focus:ring-emerald-500'
+                            : 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 focus:ring-rose-500'
+                        }`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-semibold mb-1.5 ${
+                        position === 'LONG' 
+                          ? 'text-rose-600 dark:text-rose-400' 
+                          : 'text-emerald-600 dark:text-emerald-400'
+                      }`}>
+                        손절가
+                      </label>
+                      <input
+                        type="text"
+                        value={stopLoss}
+                        onChange={handleFormattedInput(setStopLoss)}
+                        className={`w-full border rounded-xl py-3 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all ${
+                          position === 'LONG'
+                            ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 focus:ring-rose-500'
+                            : 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 focus:ring-emerald-500'
+                        }`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Risk Percentage */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5">허용 리스크 (최대 손실율)</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={risk}
+                        onChange={handleFormattedInput(setRisk)}
+                        className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 pl-4 pr-8 text-xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        placeholder="1"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">%</span>
+                    </div>
+                  </div>
+                  
+                  {/* Symbol (Optional) */}
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5">티커 / 종목명 (선택)</label>
+                    <input
+                      type="text"
+                      value={symbol}
+                      onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                      className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 px-4 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      placeholder="예: NVDA, BTC, 005930"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3 pt-2">
+                    <button
+                      onClick={calculate}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
+                    >
+                      몇 주 살지 계산
+                    </button>
+                    <button
+                      onClick={handleReset}
+                      className="px-4 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-bold rounded-xl transition-all active:scale-[0.98] flex items-center justify-center"
+                      title="초기화"
+                    >
+                      <RefreshCwIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {}
+              {/* RIGHT COLUMN: Results & Log */}
+              <div className="lg:col-span-7 space-y-6">
+                
+                {/* Result Display Card */}
+                <div className="bg-neutral-900 dark:bg-neutral-900 text-white rounded-3xl p-8 shadow-2xl border border-neutral-800 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+                  
+                  {error ? (
+                    <div className="flex flex-col items-center justify-center h-full py-12 text-rose-400">
+                      <AlertCircleIcon className="w-12 h-12 mb-4 opacity-80" />
+                      <p className="text-center font-bold text-lg">{error}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-neutral-400 font-medium mb-3 text-lg">매수 가능 수량</h2>
+                      <div className="flex items-baseline mb-8">
+                        <span className="text-6xl md:text-8xl font-black tracking-tighter text-white">
+                          {size !== null ? formatNumber(size) : '0'}
+                        </span>
+                        <span className="text-2xl md:text-3xl font-bold ml-3 text-neutral-400">
+                          {market === 'CRYPTO' ? '개' : '주'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6 pt-6 border-t border-neutral-800">
+                        <div>
+                          <p className="text-neutral-400 text-sm font-medium mb-1">주당 위험</p>
+                          <p className="text-2xl md:text-3xl font-bold">
+                            {getCurrencySymbol()}{formatNumber(riskPerShare, 4)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-neutral-400 text-sm font-medium mb-1">총 매수금액</p>
+                          <p className="text-2xl md:text-3xl font-bold">
+                            {getCurrencySymbol()}{formatNumber(totalEntryAmount)}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {}
+                {/* Save Trade Form Section */}
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800">
+                  <h3 className="font-bold text-lg mb-4 flex items-center">
+                    <SaveIcon className="w-5 h-5 mr-2 text-neutral-400" />
+                    거래 기록 저장
+                  </h3>
+                  <textarea
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    maxLength={2000}
+                    placeholder="매매 근거, 차트 패턴 등 메모를 남겨주세요."
+                    className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 min-h-[100px] mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-neutral-800 dark:text-neutral-200 font-medium"
+                  />
+                  <button
+                    onClick={handleSaveTrade}
+                    disabled={size === null || error !== ''}
+                    className="w-full bg-neutral-900 hover:bg-black dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    기록에 추가하기
+                  </button>
+                </div>
+
+                {}
+                {/* Trade History Log Section */}
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800">
+                  <div className="flex justify-between items-end mb-6">
+                    <div>
+                      <h3 className="font-bold text-xl uppercase tracking-wider text-neutral-800 dark:text-neutral-200">Trade Log</h3>
+                      <p className="text-sm text-neutral-500 mt-1 flex items-center">
+                        <InfoIcon className="w-4 h-4 mr-1 flex-shrink-0" />
+                        계산기는 로그인 없이 사용할 수 있고, 거래기록 저장은 브라우저에 보관됩니다.
+                      </p>
+                    </div>
+                  </div>
+
+                  {tradeLog.length === 0 ? (
+                    <div className="text-center py-12 text-neutral-400 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl font-medium">
+                      저장된 거래 기록이 없습니다.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {tradeLog.map((trade) => (
+                        <div key={trade.id} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center space-x-3">
+                              <span className={`px-2.5 py-1 rounded-md text-xs font-black ${
+                                trade.position === 'LONG' 
+                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400' 
+                                  : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
+                              }`}>
+                                {trade.position}
+                              </span>
+                              <span className="font-bold text-lg">{trade.symbol}</span>
+                              <span className="text-xs text-neutral-400 font-medium">{trade.date}</span>
+                            </div>
+                            <button onClick={() => deleteTrade(trade.id)} className="text-neutral-400 hover:text-rose-500 transition-colors" title="삭제">
+                              <Trash2Icon className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-3">
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400 text-xs font-medium">진입가</p>
+                              <p className="font-bold">{formatNumber(trade.entry, 4)}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400 text-xs font-medium">손절가</p>
+                              <p className="font-bold text-rose-500">{formatNumber(trade.stopLoss, 4)}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400 text-xs font-medium">리스크</p>
+                              <p className="font-bold">{trade.risk}%</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400 text-xs font-medium">수량</p>
+                              <p className="font-bold text-blue-600 dark:text-blue-400">{formatNumber(trade.size)}</p>
+                            </div>
+                          </div>
+
+                          {trade.memo && (
+                            <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 p-3 rounded-lg border border-neutral-100 dark:border-neutral-800 whitespace-pre-wrap">
+                              {trade.memo}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            </div>
+            
+            {}
+            {/* Risk Discipline Footer */}
+            <div className="mt-20 text-center pb-12">
+              <h4 className="text-xs font-bold tracking-widest text-neutral-400 mb-3 uppercase">RISK DISCIPLINE</h4>
+              <p className="text-lg md:text-2xl font-bold text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                "손절 위치는 차트 구조가 결정하고, <br className="md:hidden" />포지션 크기는 리스크가 결정한다."
+              </p>
+            </div>
+
+          </main>
+        </div>
+      );
+    };
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
