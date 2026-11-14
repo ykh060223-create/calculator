@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Position Sizing Calculator - 포지션 사이징 계산기</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    }
+    
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-200">
+
+  <!-- Top Navigation Bar -->
+  <nav class="border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <svg class="w-6 h-6 text-neutral-900 dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>
+        </svg>
+        <span class="font-bold text-lg tracking-tight">Position Sizing Calculator</span>
+      </div>
+      <button 
+        id="theme-toggle"
+        aria-label="테마 전환"
+        class="p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+      >
+        <!-- Sun Icon (shown in dark mode) -->
+        <svg id="icon-sun" class="w-5 h-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+        </svg>
+        <!-- Moon Icon (shown in light mode) -->
+        <svg id="icon-moon" class="w-5 h-5 text-neutral-700 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 md:py-12">
+    
+    <!-- Main Emphasized Headline -->
+    <div class="mb-10">
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-black tracking-tight text-neutral-900 dark:text-white">
+        몇 주를 사야할까?
+      </h1>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- LEFT COLUMN: Inputs -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Market & Direction Card -->
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800">
+          <div class="grid grid-cols-3 gap-2 mb-4" id="market-buttons">
+            <button data-market="KR" class="market-btn py-3 px-2 rounded-xl font-bold text-sm transition-all bg-neutral-100 text-neutral-500 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700">
+              국내주식(₩)
+            </button>
+            <button data-market="US" class="market-btn py-3 px-2 rounded-xl font-bold text-sm transition-all bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-md">
+              미국주식($)
+            </button>
+            <button data-market="CRYPTO" class="market-btn py-3 px-2 rounded-xl font-bold text-sm transition-all bg-neutral-100 text-neutral-500 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700">
+              암호화폐
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2" id="position-buttons">
+            <button data-pos="LONG" class="pos-btn py-3 rounded-xl font-bold text-sm transition-all border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
+              LONG (매수)
+            </button>
+            <button data-pos="SHORT" class="pos-btn py-3 rounded-xl font-bold text-sm transition-all border-2 border-transparent text-neutral-500 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700">
+              SHORT (공매도)
+            </button>
+          </div>
+        </div>
+
+        <!-- Core Numeric Inputs Card -->
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800 space-y-5">
+          
+          <!-- Balance & Leverage -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+            <div class="sm:col-span-8">
+              <label id="balance-label" class="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">
+                현재 잔고 ($)
+              </label>
+              <input
+                id="input-balance"
+                type="text"
+                inputmode="decimal"
+                value="10,000"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3.5 px-4 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="0"
+              />
+            </div>
+            <div class="sm:col-span-4">
+              <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">
+                레버리지
+              </label>
+              <div class="relative">
+                <input
+                  id="input-leverage"
+                  type="text"
+                  inputmode="decimal"
+                  value="1"
+                  disabled
+                  class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3.5 pl-4 pr-8 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
+                />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">X</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Entry Price & Stop Loss Price -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label id="label-entry" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-emerald-600 dark:text-emerald-400">
+                진입가
+              </label>
+              <input
+                id="input-entry"
+                type="text"
+                inputmode="decimal"
+                value="100"
+                class="w-full border rounded-xl py-3.5 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label id="label-sl" class="block text-xs font-bold uppercase tracking-wider mb-1.5 text-rose-600 dark:text-rose-400">
+                손절가
+              </label>
+              <input
+                id="input-sl"
+                type="text"
+                inputmode="decimal"
+                value="96.50"
+                class="w-full border rounded-xl py-3.5 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 focus:ring-rose-500"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <!-- Risk Percentage -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">
+              리스크 (최대 손실율)
+            </label>
+            <div class="relative">
+              <input
+                id="input-risk"
+                type="text"
+                inputmode="decimal"
+                value="1"
+                class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3.5 pl-4 pr-10 text-xl font-black focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                placeholder="1"
+              />
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-lg">%</span>
+            </div>
+          </div>
+          
+          <!-- Optional Ticker Symbol -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">
+              상품명 (선택)
+            </label>
+            <input
+              id="input-symbol"
+              type="text"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 px-4 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              placeholder="예: NVDA, BTC, 삼성전자"
+            />
+          </div>
+
+          <!-- Calculate & Reset Buttons -->
+          <div class="flex space-x-3 pt-2">
+            <button
+              id="btn-calc"
+              class="flex-1 bg-neutral-900 hover:bg-black dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 font-bold py-4 rounded-xl shadow-md transition-all active:scale-[0.98]"
+            >
+              몇 주 살지 계산
+            </button>
+            <button
+              id="btn-reset"
+              class="px-4 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-bold rounded-xl transition-all active:scale-[0.98] flex items-center justify-center"
+              title="초기화"
+            >
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 21H3v-5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Results & Log -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Primary Result Card -->
+        <div class="bg-neutral-900 dark:bg-neutral-900 text-white rounded-3xl p-8 shadow-xl border border-neutral-800 relative overflow-hidden">
+          
+          <!-- Error Display -->
+          <div id="result-error" class="hidden flex-col items-center justify-center py-12 text-rose-400">
+            <svg class="w-12 h-12 mb-4 opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+            </svg>
+            <p id="error-text" class="text-center font-bold text-lg"></p>
+          </div>
+
+          <!-- Success Result Display -->
+          <div id="result-content">
+            <h2 class="text-neutral-400 font-medium mb-3 text-lg">매수 가능 수량</h2>
+            <div class="flex items-baseline mb-8">
+              <span id="res-size" class="text-6xl md:text-8xl font-black tracking-tighter text-white">28</span>
+              <span id="res-unit" class="text-2xl md:text-3xl font-bold ml-3 text-neutral-400">주</span>
+            </div>
+
+            <!-- Margin Exceeded Warning -->
+            <div id="margin-warning" class="hidden mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm flex items-start space-x-2.5">
+              <svg class="w-5 h-5 flex-shrink-0 text-amber-400 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+              </svg>
+              <div>
+                <p class="font-bold">필요 증거금이 현재 잔고를 초과합니다.</p>
+                <p class="text-amber-300/80 mt-0.5">레버리지를 높이거나, 가용 잔고 한도 내에서 수량을 줄여 진입하세요.</p>
+              </div>
+            </div>
+
+            <div id="res-grid" class="grid grid-cols-2 gap-4 sm:gap-6 pt-6 border-t border-neutral-800">
+              <div>
+                <p class="text-neutral-400 text-xs sm:text-sm font-medium mb-1">주당 위험</p>
+                <p id="res-rps" class="text-xl md:text-2xl font-bold">$3.5</p>
+              </div>
+              <div>
+                <p class="text-neutral-400 text-xs sm:text-sm font-medium mb-1">총 매수금액</p>
+                <p id="res-total" class="text-xl md:text-2xl font-bold">$2,800</p>
+              </div>
+              <div id="res-margin-box" class="hidden">
+                <p class="text-neutral-400 text-xs sm:text-sm font-medium mb-1">필요 증거금</p>
+                <p id="res-margin" class="text-xl md:text-2xl font-bold text-emerald-400">USDT 0</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Save Trade Form Section -->
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800">
+          <h3 class="font-bold text-lg mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 18v-4h4v4"/>
+            </svg>
+            거래 기록 저장
+          </h3>
+          <textarea
+            id="input-memo"
+            maxlength="2000"
+            placeholder="매매 근거, 차트 패턴 등 메모를 남겨주세요."
+            class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 min-h-[100px] mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y text-neutral-800 dark:text-neutral-200 font-medium"
+          ></textarea>
+          <button
+            id="btn-save"
+            class="w-full bg-neutral-900 hover:bg-black dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-900 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            기록에 추가하기
+          </button>
+        </div>
+
+        <!-- Trade History Log Section -->
+        <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-sm border border-neutral-200 dark:border-neutral-800">
+          <div class="flex justify-between items-end mb-6">
+            <div>
+              <h3 class="font-bold text-xl uppercase tracking-wider text-neutral-800 dark:text-neutral-200">Trade Log</h3>
+              <p class="text-sm text-neutral-500 mt-1 flex items-center">
+                <svg class="w-4 h-4 mr-1 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                </svg>
+                계산기는 로그인 없이 사용할 수 있고, 거래기록 저장은 브라우저에 보관됩니다.
+              </p>
+            </div>
+          </div>
+
+          <div id="trade-log-list" class="space-y-4">
+            <div class="text-center py-12 text-neutral-400 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl font-medium">
+              저장된 거래 기록이 없습니다.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    
+    <!-- Risk Discipline Footer -->
+    <div class="mt-20 text-center pb-12">
+      <h4 class="text-xs font-bold tracking-widest text-neutral-400 mb-3 uppercase">RISK DISCIPLINE</h4>
+      <p class="text-lg md:text-2xl font-bold text-neutral-700 dark:text-neutral-300 leading-relaxed">
+        "손절 위치는 차트 구조가 결정하고, <br class="md:hidden" />포지션 크기는 리스크가 결정한다."
+      </p>
+    </div>
+
+  </main>
+
+  <script>
+    // --- Application State ---
+    const state = {
+      market: 'US', // KR, US, CRYPTO
+      position: 'LONG', // LONG, SHORT
+      balances: {
+        KR: '10,000,000',
+        US: '10,000',
+        CRYPTO: '10,000'
+      },
+      size: null,
+      hasError: false,
+      tradeLog: []
+    };
+
+    // Load saved data from localStorage
+    try {
+      const savedBalances = localStorage.getItem('psc_balances');
+      if (savedBalances) state.balances = JSON.parse(savedBalances);
+      const savedLogs = localStorage.getItem('psc_trade_log');
+      if (savedLogs) state.tradeLog = JSON.parse(savedLogs);
+    } catch (e) {}
+
+    // --- DOM Elements ---
+    const elThemeToggle = document.getElementById('theme-toggle');
+    const elIconSun = document.getElementById('icon-sun');
+    const elIconMoon = document.getElementById('icon-moon');
+    const elMarketBtns = document.querySelectorAll('.market-btn');
+    const elPosBtns = document.querySelectorAll('.pos-btn');
+    const elBalanceLabel = document.getElementById('balance-label');
+    const elInputBalance = document.getElementById('input-balance');
+    const elInputLeverage = document.getElementById('input-leverage');
+    const elLabelEntry = document.getElementById('label-entry');
+    const elInputEntry = document.getElementById('input-entry');
+    const elLabelSl = document.getElementById('label-sl');
+    const elInputSl = document.getElementById('input-sl');
+    const elInputRisk = document.getElementById('input-risk');
+    const elInputSymbol = document.getElementById('input-symbol');
+    const elBtnCalc = document.getElementById('btn-calc');
+    const elBtnReset = document.getElementById('btn-reset');
+    const elResultError = document.getElementById('result-error');
+    const elErrorText = document.getElementById('error-text');
+    const elResultContent = document.getElementById('result-content');
+    const elResSize = document.getElementById('res-size');
+    const elResUnit = document.getElementById('res-unit');
+    const elMarginWarning = document.getElementById('margin-warning');
+    const elResGrid = document.getElementById('res-grid');
+    const elResRps = document.getElementById('res-rps');
+    const elResTotal = document.getElementById('res-total');
+    const elResMarginBox = document.getElementById('res-margin-box');
+    const elResMargin = document.getElementById('res-margin');
+    const elInputMemo = document.getElementById('input-memo');
+    const elBtnSave = document.getElementById('btn-save');
+    const elTradeLogList = document.getElementById('trade-log-list');
+
+    // --- Helper Functions ---
+    function addCommas(str) {
+      if (!str && str !== 0) return '';
+      const parts = str.toString().split('.');
+      parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      return parts.join('.');
+    }
+
+    function removeCommas(str) {
+      if (!str) return '';
+      return str.toString().replace(/,/g, '');
+    }
+
+    function formatNumber(num, decimals = 2) {
+      if (num === null || num === undefined || isNaN(num)) return '-';
+      return Number(num).toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: decimals,
+      });
+    }
+
+    function getCurrencySymbol() {
+      if (state.market === 'KR') return '₩';
+      if (state.market === 'US') return '$';
+      return 'USDT';
+    }
+
+    function sanitizeNumericInput(val) {
+      let clean = val.replace(/[^0-9.]/g, '');
+      const dotIndex = clean.indexOf('.');
+      if (dotIndex !== -1) {
+        clean = clean.slice(0, dotIndex + 1) + clean.slice(dotIndex + 1).replace(/\./g, '');
+      }
+      return clean;
+    }
+
+    // --- UI Update Functions ---
+    function updateMarketUI() {
+      elMarketBtns.forEach(btn => {
+        if (btn.dataset.market === state.market) {
+          btn.className = 'market-btn py-3 px-2 rounded-xl font-bold text-sm transition-all bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-md';
+        } else {
+          btn.className = 'market-btn py-3 px-2 rounded-xl font-bold text-sm transition-all bg-neutral-100 text-neutral-500 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700';
+        }
+      });
+
+      elBalanceLabel.textContent = `현재 잔고 (${getCurrencySymbol()})`;
+      elInputBalance.value = state.balances[state.market] || '';
+
+      if (state.market === 'CRYPTO') {
+        elInputLeverage.disabled = false;
+        elResUnit.textContent = '개';
+        elResGrid.className = 'grid grid-cols-3 gap-4 sm:gap-6 pt-6 border-t border-neutral-800';
+        elResMarginBox.classList.remove('hidden');
+      } else {
+        elInputLeverage.value = '1';
+        elInputLeverage.disabled = true;
+        elResUnit.textContent = '주';
+        elResGrid.className = 'grid grid-cols-2 gap-4 sm:gap-6 pt-6 border-t border-neutral-800';
+        elResMarginBox.classList.add('hidden');
+        elMarginWarning.classList.add('hidden');
+      }
+
+      calculate();
+    }
+
+    function updatePositionUI() {
+      const isLong = state.position === 'LONG';
+
+      elPosBtns.forEach(btn => {
+        const pos = btn.dataset.pos;
+        if (pos === 'LONG') {
+          btn.className = isLong
+            ? 'pos-btn py-3 rounded-xl font-bold text-sm transition-all border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
+            : 'pos-btn py-3 rounded-xl font-bold text-sm transition-all border-2 border-transparent text-neutral-500 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700';
+        } else {
+          btn.className = !isLong
+            ? 'pos-btn py-3 rounded-xl font-bold text-sm transition-all border-2 border-rose-500 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30'
+            : 'pos-btn py-3 rounded-xl font-bold text-sm transition-all border-2 border-transparent text-neutral-500 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700';
+        }
+      });
+
+      if (isLong) {
+        elLabelEntry.className = 'block text-xs font-bold uppercase tracking-wider mb-1.5 text-emerald-600 dark:text-emerald-400';
+        elInputEntry.className = 'w-full border rounded-xl py-3.5 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500';
+        elLabelSl.className = 'block text-xs font-bold uppercase tracking-wider mb-1.5 text-rose-600 dark:text-rose-400';
+        elInputSl.className = 'w-full border rounded-xl py-3.5 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 focus:ring-rose-500';
+      } else {
+        elLabelEntry.className = 'block text-xs font-bold uppercase tracking-wider mb-1.5 text-rose-600 dark:text-rose-400';
+        elInputEntry.className = 'w-full border rounded-xl py-3.5 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 focus:ring-rose-500';
+        elLabelSl.className = 'block text-xs font-bold uppercase tracking-wider mb-1.5 text-emerald-600 dark:text-emerald-400';
+        elInputSl.className = 'w-full border rounded-xl py-3.5 px-4 text-lg font-bold focus:outline-none focus:ring-2 transition-all bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500';
+      }
+
+      calculate();
+    }
+
+    function showError(msg) {
+      state.hasError = true;
+      state.size = null;
+      elResultContent.classList.add('hidden');
+      elResultError.classList.remove('hidden');
+      elResultError.classList.add('flex');
+      elErrorText.textContent = msg;
+      elBtnSave.disabled = true;
+    }
+
+    function clearError() {
+      state.hasError = false;
+      elResultError.classList.add('hidden');
+      elResultError.classList.remove('flex');
+      elResultContent.classList.remove('hidden');
+    }
+
+    // --- Core Calculation ---
+    function calculate() {
+      const b = parseFloat(removeCommas(elInputBalance.value));
+      const l = parseFloat(removeCommas(elInputLeverage.value)) || 1;
+      const e = parseFloat(removeCommas(elInputEntry.value));
+      const sl = parseFloat(removeCommas(elInputSl.value));
+      const r = parseFloat(removeCommas(elInputRisk.value));
+
+      if (!b || !e || !sl || !r) {
+        clearError();
+        elResSize.textContent = '0';
+        elResRps.textContent = `${getCurrencySymbol()}-`;
+        elResTotal.textContent = `${getCurrencySymbol()}-`;
+        elResMargin.textContent = `${getCurrencySymbol()}-`;
+        elMarginWarning.classList.add('hidden');
+        elBtnSave.disabled = true;
+        return;
+      }
+
+      if (l <= 0) return showError('레버리지는 1 이상의 값을 입력해주세요.');
+      if (e <= 0) return showError('올바른 진입가격을 입력해주세요.');
+      if (sl <= 0) return showError('올바른 손절가격을 입력해주세요.');
+      if (r <= 0) return showError('리스크는 0보다 큰 금액을 입력해주세요.');
+      if (r >= 100) return showError('리스크는 100보다 작은 값을 입력해주세요.');
+
+      let rps = 0;
+      if (state.position === 'LONG') {
+        if (sl >= e) return showError('롱 포지션 기준 손절가는 진입가보다 낮아야 합니다.');
+        rps = e - sl;
+      } else {
+        if (e >= sl) return showError('숏 포지션 기준 진입가는 손절가보다 낮아야 합니다.');
+        rps = sl - e;
+      }
+
+      if (rps <= 0) return;
+
+      clearError();
+
+      const rawSize = (b * (r / 100)) / rps;
+      const calculatedSize = state.market === 'CRYPTO'
+        ? Math.floor(rawSize * 10000) / 10000
+        : Math.floor(rawSize);
+
+      const totalAmount = calculatedSize * e;
+      const marginNeeded = totalAmount / l;
+      const exceeded = state.market === 'CRYPTO' && marginNeeded > b;
+
+      state.size = calculatedSize;
+      elBtnSave.disabled = false;
+
+      const sym = getCurrencySymbol();
+      elResSize.textContent = formatNumber(calculatedSize, state.market === 'CRYPTO' ? 4 : 0);
+      elResRps.textContent = `${sym}${formatNumber(rps, 4)}`;
+      elResTotal.textContent = `${sym}${formatNumber(totalAmount)}`;
+
+      if (state.market === 'CRYPTO') {
+        elResMargin.textContent = `${sym} ${formatNumber(marginNeeded)}`;
+        if (exceeded) {
+          elMarginWarning.classList.remove('hidden');
+          elResMargin.className = 'text-xl md:text-2xl font-bold text-amber-400';
+        } else {
+          elMarginWarning.classList.add('hidden');
+          elResMargin.className = 'text-xl md:text-2xl font-bold text-emerald-400';
+        }
+      }
+    }
+
+    // --- Trade Log Rendering ---
+    function renderTradeLog() {
+      if (state.tradeLog.length === 0) {
+        elTradeLogList.innerHTML = `
+          <div class="text-center py-12 text-neutral-400 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl font-medium">
+            저장된 거래 기록이 없습니다.
+          </div>
+        `;
+        return;
+      }
+
+      elTradeLogList.innerHTML = state.tradeLog.map(trade => {
+        const isLong = trade.position === 'LONG';
+        const badgeClass = isLong
+          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+          : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400';
+        const entryColor = isLong
+          ? 'text-emerald-600 dark:text-emerald-400'
+          : 'text-rose-600 dark:text-rose-400';
+        const slColor = isLong
+          ? 'text-rose-600 dark:text-rose-400'
+          : 'text-emerald-600 dark:text-emerald-400';
+
+        const escapedMemo = trade.memo
+          ? trade.memo.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          : '';
+
+        return `
+          <div class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex items-center space-x-3">
+                <span class="px-2.5 py-1 rounded-md text-xs font-black ${badgeClass}">
+                  ${trade.position}
+                </span>
+                <span class="font-bold text-lg">${trade.symbol}</span>
+                <span class="text-xs text-neutral-400 font-medium">${trade.date}</span>
+              </div>
+              <button onclick="deleteTrade(${trade.id})" class="text-neutral-400 hover:text-rose-500 transition-colors" title="삭제">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-3">
+              <div>
+                <p class="text-neutral-500 dark:text-neutral-400 text-xs font-medium">진입가</p>
+                <p class="font-bold ${entryColor}">${formatNumber(trade.entry, 4)}</p>
+              </div>
+              <div>
+                <p class="text-neutral-500 dark:text-neutral-400 text-xs font-medium">손절가</p>
+                <p class="font-bold ${slColor}">${formatNumber(trade.stopLoss, 4)}</p>
+              </div>
+              <div>
+                <p class="text-neutral-500 dark:text-neutral-400 text-xs font-medium">리스크</p>
+                <p class="font-bold">${trade.risk}%</p>
+              </div>
+              <div>
+                <p class="text-neutral-500 dark:text-neutral-400 text-xs font-medium">수량</p>
+                <p class="font-bold text-neutral-900 dark:text-white">${formatNumber(trade.size, trade.market === 'CRYPTO' ? 4 : 0)}</p>
+              </div>
+            </div>
+
+            ${escapedMemo ? `
+              <div class="mt-2 text-sm text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 p-3 rounded-lg border border-neutral-100 dark:border-neutral-800 whitespace-pre-wrap">${escapedMemo}</div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.deleteTrade = function(id) {
+      state.tradeLog = state.tradeLog.filter(t => t.id !== id);
+      try {
+        localStorage.setItem('psc_trade_log', JSON.stringify(state.tradeLog));
+      } catch (e) {}
+      renderTradeLog();
+    };
+
+    // --- Event Listeners ---
+    elThemeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      if (isDark) {
+        elIconSun.classList.remove('hidden');
+        elIconMoon.classList.add('hidden');
+      } else {
+        elIconSun.classList.add('hidden');
+        elIconMoon.classList.remove('hidden');
+      }
+    });
+
+    elMarketBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.market = btn.dataset.market;
+        updateMarketUI();
+      });
+    });
+
+    elPosBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.position = btn.dataset.pos;
+        updatePositionUI();
+      });
+    });
+
+    elInputBalance.addEventListener('input', (e) => {
+      const clean = sanitizeNumericInput(e.target.value);
+      const formatted = addCommas(clean);
+      e.target.value = formatted;
+      state.balances[state.market] = formatted;
+      try {
+        localStorage.setItem('psc_balances', JSON.stringify(state.balances));
+      } catch (err) {}
+      calculate();
+    });
+
+    [elInputEntry, elInputSl].forEach(input => {
+      input.addEventListener('input', (e) => {
+        const clean = sanitizeNumericInput(e.target.value);
+        e.target.value = addCommas(clean);
+        calculate();
+      });
+    });
+
+    [elInputLeverage, elInputRisk].forEach(input => {
+      input.addEventListener('input', (e) => {
+        e.target.value = sanitizeNumericInput(e.target.value);
+        calculate();
+      });
+    });
+
+    elInputSymbol.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+
+    elBtnCalc.addEventListener('click', calculate);
+
+    elBtnReset.addEventListener('click', () => {
+      elInputLeverage.value = '1';
+      elInputEntry.value = '100';
+      elInputSl.value = '96.50';
+      elInputRisk.value = '1';
+      elInputSymbol.value = '';
+      elInputMemo.value = '';
+      calculate();
+    });
+
+    elBtnSave.addEventListener('click', () => {
+      if (state.size === null || state.hasError) return;
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const newTrade = {
+        id: Date.now(),
+        date: dateStr,
+        symbol: elInputSymbol.value.trim() || '미지정',
+        market: state.market,
+        position: state.position,
+        entry: parseFloat(removeCommas(elInputEntry.value)),
+        stopLoss: parseFloat(removeCommas(elInputSl.value)),
+        risk: parseFloat(removeCommas(elInputRisk.value)),
+        size: state.size,
+        memo: elInputMemo.value.trim()
+      };
+
+      state.tradeLog.unshift(newTrade);
+      try {
+        localStorage.setItem('psc_trade_log', JSON.stringify(state.tradeLog));
+      } catch (e) {}
+
+      elInputMemo.value = '';
+      elInputSymbol.value = '';
+      renderTradeLog();
+    });
+
+    // --- Initial Boot ---
+    updateMarketUI();
+    updatePositionUI();
+    renderTradeLog();
+  </script>
+</body>
+</html>
